@@ -1,4 +1,8 @@
-/* PHEW Webserver by Philipp Weißmann, do with this Webserver what you want ! It's under the BSD License */
+/* PHEW Webserver by Philipp Weißmann (sf@philipp-weissmann.de) , do with this Webserver what you want ! It's under the BSD License
+
+IPv6 extension by Marc Schuetz (schuetzm@users.sf.net)
+
+*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -10,12 +14,13 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <string.h>
+#define USE_IPV6 1
 #define SERVERVER "1.0"	     			/* Die Versionsnummer */
 #define SERVERNAME "Phew"    			/* Der Name des Webservers */
 #define PORT 80	     				/* Der zu öffnende Port - HTTP ist Standartmäßig  80 (nur root darf niedrige Ports öffnen !*/
 #define BUFFERSIZE 1024  			/* Die größe des Dateipuffers */ 
 #define STDFILE "index.htm" 			/* Name der Datei, die geöffnet wird, wenn keine Angaben gemacht wurden*/                    
-#define STDDIR "/home/knopfler/webserv/html" 	/* Das Standart Verzeichniss des Webservers*/
+#define STDDIR "/home/marc/phew/html" 	/* Das Standart Verzeichniss des Webservers*/
 #define MAXCTYPELENGHT 30 			/* Die maximale länge eines Content-Types*/
 
 /*Socket Adressen Struktur*/
@@ -321,7 +326,36 @@ int sendit(FILE * pfile, int socket_out, int type, char content[15])
 
 
 
+#if USE_IPV6
 
+char *inet6_ntoa(char *buffer, struct sockaddr_in6 *in6_addr)
+{
+  static char static_buffer[sizeof("1234:5678:9abc:def0:1234:5678:9abc:def0")];
+  int status;
+
+  if (!buffer)
+    buffer = static_buffer;
+
+  status = getnameinfo((const struct sockaddr *) in6_addr, sizeof(*in6_addr),
+  	      buffer, sizeof(static_buffer),
+	      NULL, 0, NI_NUMERICHOST);
+
+  if(status != 0)
+    sprintf(buffer, "(error %d)", status);
+
+  return buffer;
+}
+
+#endif
+
+
+/* Anmerkungen zu IPv6:
+ * - IP6 wird von KDE (> 2.?) unterstützt
+ * - aufzurufen im Konqueror mit http://[::1]/...
+ * - Der Web-Server lauscht auch auf IPv4-Schnittstellen, d.h. http://localhost
+ *   funktioniert auch, wenn der Browser kein IPv6 unterstützt
+ * - in diesem Fall wird als Client-Adresse ::ffff:127.0.0.1 angezeigt (4-in-6)
+ */
 
 
 int main() 
@@ -329,8 +363,13 @@ int main()
 
 
 	int msgsock;
+#if USE_IPV6
+	struct sockaddr_in6 address;
+	struct sockaddr_in6 fremdrechner;
+#else
 	struct sockaddr_in address; 	/* Adresse des Servers wird festgelegt*/
 	struct sockaddr_in fremdrechner; /* Adresse des Verbindungspartners*/
+#endif
 	unsigned int fremdlenght;		/* Die Länge der Adresse des Fremdrechners*/ 
 	int sock; 			/* Ein Socket, der benutzt wird.*/
 	int n;				/* Zählvariable*/
@@ -341,15 +380,25 @@ int main()
 	/*Festlegung der Standardeinstellungen*/
 
 
-	address.sin_addr.s_addr= INADDR_ANY; /*IP Adresse auf der gelauscht werden soll - vorerst alle^*/
+#if USE_IPV6
+	address.sin6_addr = in6addr_any;
+	address.sin6_port = htons(PORT);
+	address.sin6_family = AF_INET6;
+#else
+	address.sin6_addr.s_addr= INADDR_ANY; /*IP Adresse auf der gelauscht werden soll - vorerst alle^*/
 	address.sin_port =  htons (PORT); /*Welcher Port - niedrige duerfen nur von root geoeffnet werden*/
 	address.sin_family = AF_INET; /*Welche Protokollfamilie*/
+#endif
 
 
 	chroot(STDDIR);
 	printf("%s","Starting Webserver \n");
 
+#if USE_IPV6
+	sock = socket(AF_INET6,SOCK_STREAM,0);
+#else
 	sock = socket(AF_INET,SOCK_STREAM,0); /*Ein Socket wird geöffnet*/
+#endif
 
 
 
@@ -384,7 +433,13 @@ exit(0);
 			perror("accept");
 
 
-		printf("%s %s %s\n","Parent: Incoming connection from " ,inet_ntoa(fremdrechner.sin_addr) ," - forking...");
+		printf("Parent: Incoming connection from %s - forking...\n",
+#if USE_IPV6
+			inet6_ntoa(NULL, &fremdrechner)
+#else
+			inet_ntoa(fremdrechner.sin_addr)
+#endif
+			);
 		waitpid(-1,NULL,WNOHANG);
 		if(-1 == (pid = fork()))
 		{

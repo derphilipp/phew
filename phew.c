@@ -1,3 +1,5 @@
+/* PHEW Webserver by Philipp Weiﬂmann, do with this Webserver what you want ! It's under the BSD License */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -8,14 +10,13 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <string.h>
-#define SERVERVER "0.1"	     		/* Die Versionsnummer */
-#define SERVERNAME "Phew"    		/* Der Name des Webservers */
-#define PORT 80	     		/* Der zu ˆffnende Port - HTTP ist 
-Standartm‰ﬂig  80 (nur root darf niedrige Ports ˆffnen !*/	
-#define BUFFERSIZE 1024  	/* Die grˆﬂe des Dateipuffers */ 
-#define STDFILE "index.htm" 	/* Name der Datei, die geˆffnet wird, wenn keine Angaben gemacht wurden*/                         
-#define STDDIR "/home/ppweissm/webserver/html"
-#define MAXCTYPELENGHT 30 /*Die maximale l‰nge eines Content-Types*/
+#define SERVERVER "1.0"	     			/* Die Versionsnummer */
+#define SERVERNAME "Phew"    			/* Der Name des Webservers */
+#define PORT 80	     				/* Der zu ˆffnende Port - HTTP ist Standartm‰ﬂig  80 (nur root darf niedrige Ports ˆffnen !*/
+#define BUFFERSIZE 1024  			/* Die grˆﬂe des Dateipuffers */ 
+#define STDFILE "index.htm" 			/* Name der Datei, die geˆffnet wird, wenn keine Angaben gemacht wurden*/                    
+#define STDDIR "/home/knopfler/webserv/html" 	/* Das Standart Verzeichniss des Webservers*/
+#define MAXCTYPELENGHT 30 			/* Die maximale l‰nge eines Content-Types*/
 
 /*Socket Adressen Struktur*/
 #if 0
@@ -75,24 +76,24 @@ FILE * isfileok (char y[BUFFERSIZE], int * sendtype, char content[MAXCTYPELENGHT
 	FILE *pfile;
 
 
-	
 
-		
+
+
 	/* Die Funktion request_type wird aufgerufen, um zu ¸berpr¸fen, welcher anfragentyp vorliegt*/
 	/* Wenn die Anfrage ung¸ltig ist, so wird der Sendetyp 1 - Also GET gew‰hlt, da eine Fehlermeldung */
 	/* ‹bertragen wird */
 
 	c=request_type(y);
 	if     (1==c) {a=4; *sendtype=1;}
-		else if(2==c) {a=5; *sendtype=2;}
-			else *sendtype=1;
+	else if(2==c) {a=5; *sendtype=2;}
+	else *sendtype=1;
 
 
 
 	/* Bei einer G¸ltigen Anfrage, wird der vom Client gesendete Anfrage String Analysiert: Es wird ab dem 4 / 5 Buchstaben*/ 
 	/*(HEAD: 5 GET: 4) der String weiter abgearbeitet, bis zu einem Leer- oder Sonderzeichen. Damit hat man den String, der */
 	/* (hoffentlich) auf die richtige Datei zeigt.*/   
-	 
+
 	if( c==1 || c==2 )
 	{ 
 		if(a!=4)a=5;	
@@ -167,17 +168,17 @@ FILE * isfileok (char y[BUFFERSIZE], int * sendtype, char content[MAXCTYPELENGHT
 
 		pfile=fopen("error/404.html","r");
 
-		printf("%s\n %s","CHILD: File not found - Error 404 will be send to Client",x);
+		printf("%s %s %s\n","CHILD: File \"", x, "\" not found - Error 404 will be send to Client");
 		strcpy(x,"error/404.html");	
 		*sendtype=1;
-	/* Da die Datei nicht vorhanden it, wird die Datei "404" - "File not found" (siehe rfc1945) in den String kopiert.*/
-	/* Und der Sendetype auf GET gestellt, da die Fehlermeldung ja ¸bertragen werden muss. */
+		/* Da die Datei nicht vorhanden it, wird die Datei "404" - "File not found" (siehe rfc1945) in den String kopiert.*/
+		/* Und der Sendetype auf GET gestellt, da die Fehlermeldung ja ¸bertragen werden muss. */
 	}
 
 	/*Filter ob die Fehlerausgabedatei "404 - Datei nicht gefunden" vorhanden ist*/
 	if(0==pfile)
 	{
-		printf("%s\n","CHILD: Error: Required file \"error/404.html\" not aviable !");
+		printf("%s \n","CHILD: Error: Required file \"error/404.html\" not aviable !");
 		exit(0);
 
 	}
@@ -215,7 +216,7 @@ FILE * isfileok (char y[BUFFERSIZE], int * sendtype, char content[MAXCTYPELENGHT
 		else 
 			strcpy(content,"application/octet-stream");
 
-		printf("4 Zeichen: %c%c%c%c \n",x[strlen(x)-4],x[strlen(x)-3],x[strlen(x)-2],x[strlen(x)-1]);
+		printf("4 Characters: %c%c%c%c \n",x[strlen(x)-4],x[strlen(x)-3],x[strlen(x)-2],x[strlen(x)-1]);
 	}	
 	else
 	{
@@ -223,7 +224,7 @@ FILE * isfileok (char y[BUFFERSIZE], int * sendtype, char content[MAXCTYPELENGHT
 		end[1]=x[strlen(x)-2];
 		end[2]=x[strlen(x)-1];
 		end[3]=0;
-		printf("3 Zeichen: %c%c%c   \n",x[strlen(x)-3],x[strlen(x)-2],x[strlen(x)-1]);
+		printf("3 Characters: %c%c%c   \n",x[strlen(x)-3],x[strlen(x)-2],x[strlen(x)-1]);
 
 
 		if(	(end[0]=='H'||end[0]=='h')
@@ -256,13 +257,14 @@ FILE * isfileok (char y[BUFFERSIZE], int * sendtype, char content[MAXCTYPELENGHT
 				&&  (end[1]=='N'||end[1]=='n')
 				&&  (end[2]=='G'||end[2]=='g'))
 			strcpy(content,"image/png");      
-		/* Ist keine bekannte Dateiendung dabei, wird es als Bin‰re Datei beschrieben - die vom benutzer */
+
+		/* Ist keine bekannte Dateiendung dabei, wird es als Bin‰re Datei beschrieben - die vom Benutzer */
 		/* Heruntergeladen werden kann*/
 
 		else strcpy(content,"application/octet-stream");
 	}
 
-	printf("Content Type: %s\n",content);
+	printf("Content Type: %s \n",content);
 	return(pfile);
 }
 
@@ -274,7 +276,7 @@ int sendit(FILE * pfile, int socket_out, int type, char content[15])
 	char tosend[BUFFERSIZE]="\0";
 	char header[180]="";
 
-	/*Vorerst nur HTML*/
+	/*Der Header wird aus vielen verschiedenen Variablen zusammengesetzt*/
 
 
 	strcpy(header,"HTTP/0.9 200 OK\r\n");
@@ -287,26 +289,24 @@ int sendit(FILE * pfile, int socket_out, int type, char content[15])
 	strcat(header,"\r\n\r\n");
 
 
-	printf("\nKIND: Sende Header: %s \n___\n Das war der Header\n",header);
+	printf("\nKIND: Sending Header: \n___\n%s \n___\n That was the header\n",header);
 
 
 
 	write(socket_out, header, (strlen(header)));
-	/**/	/*write(socket_out,"Content-type: text/html\n\n",sizeof("Content-type: text/html\n\n"));
-		 */
-	/*	 */
 
-	printf("Type ist %d\\n",type);
+	printf("Content Type:  %s \n",content);
 
 	if(1==type){
-		printf("\nKIND: Sende Datei: \n");
+		printf("\nCHILD: Sending File: \n");
 
 		while( ! feof (pfile) )
 		{
 
+			/* Datei wird gesendet, bis das Ende erreicht ist*/
 			much=fread(tosend,1,sizeof(tosend),pfile);
-			/*fscanf(pfile, "%1024s" ,tosend);*/
-			printf("%s",tosend);
+			/*	printf("%s",tosend);*/
+			/* Kommentierung entfernen, um zu sehen, was der Server sendet */
 			if (0 > write(socket_out,tosend,much))
 			{
 				perror("write");
@@ -316,7 +316,6 @@ int sendit(FILE * pfile, int socket_out, int type, char content[15])
 
 
 		}}
-		printf("\n");
 		return(1);
 }
 
@@ -334,22 +333,21 @@ int main()
 	struct sockaddr_in fremdrechner; /* Adresse des Verbindungspartners*/
 	unsigned int fremdlenght;		/* Die L‰nge der Adresse des Fremdrechners*/ 
 	int sock; 			/* Ein Socket, der benutzt wird.*/
-	int n;
-	int send_type=0;
-	char content_type[MAXCTYPELENGHT];
-	FILE *pfile;
+	int n;				/* Z‰hlvariable*/
+	int send_type=0;		/* Sendetyp */
+	char content_type[MAXCTYPELENGHT]; /* Content-Type*/
+	FILE *pfile;	/*Dateistream*/
 
 	/*Festlegung der Standardeinstellungen*/
 
 
-	address.sin_addr.s_addr= INADDR_ANY; /*inet_addr("127.0.0.1");*/ /*IP Adresse auf der gelauscht werden soll - vorerst alle^*/
+	address.sin_addr.s_addr= INADDR_ANY; /*IP Adresse auf der gelauscht werden soll - vorerst alle^*/
 	address.sin_port =  htons (PORT); /*Welcher Port - niedrige duerfen nur von root geoeffnet werden*/
 	address.sin_family = AF_INET; /*Welche Protokollfamilie*/
 
 
 	chroot(STDDIR);
-	/*chroot("/home/ppweissm/webserver/test/");*/
-	printf("%s","Anfang des Programmes\n");
+	printf("%s","Starting Webserver \n");
 
 	sock = socket(AF_INET,SOCK_STREAM,0); /*Ein Socket wird geˆffnet*/
 
@@ -358,21 +356,23 @@ int main()
 	if( -1 == sock )
 		perror("socket"); /*‹berpr¸fung ob der Socket offen ist*/
 	else
-		printf("%s","Socket erfolgreich geˆffnet\n");
+		printf("%s","Socket successfully opened\n");
 
-	printf("%s","Socket wird auf LISTEN gestellt...\n");
+	printf("%s","Socket set on LISTEN ...\n");
 	if (-1 ==bind(sock,((void *) &address),sizeof(address))) /*Bindet den Socket an den Port*/
-	{printf("%s","Bindefehler\n");perror("bind");exit(0);}
-	printf("%s","Alles gebunden\n");
-	/*listen(sock,5);*/
+	{
+printf("%s","An Error occured: \n");
+perror("bind");
+exit(0);
+}
+	printf("%s","Binding Successfull \n");
 	while (1)
 	{
 
-		/*int msgsock;*/ /*Socketnachricht;*/
-		printf("%s","VATER: Lauschen\n");	    
-		if (0 > listen(sock,1)) /* Es wird "gelauscht"*/
+		printf("%s","Parent: Listening....\n");	    
+		if (0 > listen(sock,5)) /* Es wird "gelauscht"*/
 			perror("listen"); /*"Lauschen" schlug fehl*/
-		printf("%s","VATER: Socket annehmen\n");
+		printf("%s","Parent: Accepting Connection...\n");
 
 		fremdlenght=sizeof(fremdrechner);
 
@@ -384,12 +384,12 @@ int main()
 			perror("accept");
 
 
-		printf("%s %s %s\n","VATER: Verbindung von Rechner " ,inet_ntoa(fremdrechner.sin_addr) ," - ich bekomme ein Kind");
+		printf("%s %s %s\n","Parent: Incoming connection from " ,inet_ntoa(fremdrechner.sin_addr) ," - forking...");
 		waitpid(-1,NULL,WNOHANG);
 		if(-1 == (pid = fork()))
 		{
 			perror ("fork");
-			printf("%s"," \"Fehlgeburt\" \n");
+			printf("%s"," Fork failed ! Check aviable memory ! \n");
 			exit(0);
 		}
 		else if(0 == pid)
@@ -411,11 +411,11 @@ int main()
 
 			sendit(pfile,msgsock,send_type,content_type);
 
-			printf("%s \n","KIND: Verbindung zumachen");
+			printf("%s \n","Child: Closing Connection");
 
 			if (0 > close (msgsock))
 				perror("close");
-			printf("%s\n","KIND: Die Verbindung ist zu - Saionara !");
+			printf("%s\n","Child: Connection is Closed - Saionara !");
 			exit(0);
 		}
 		else{close(msgsock);}
